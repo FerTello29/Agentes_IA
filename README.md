@@ -73,7 +73,16 @@ control_asistencia/
 
 | id_sesion | id_participante | estado | hora_registro |
 |---|---|---|---|
-| S01 | P01 | PRESENTE / AUSENTE | yyyy-mm-dd hh:mm:ss |
+| S01 | P01 | PRESENTE / AUSENTE / JUSTIFICADO / SUSPENSION | yyyy-mm-dd hh:mm:ss |
+
+Estados válidos (definidos en `ESTADOS`, `Config.gs`):
+
+| Valor en la hoja | Etiqueta en la app |
+|---|---|
+| PRESENTE | Asistió |
+| AUSENTE | Faltó |
+| JUSTIFICADO | Justificante |
+| SUSPENSION | Suspensión de clases |
 
 Al guardar de nuevo una sesión, los registros existentes se **actualizan**; nunca se duplica un participante dentro de la misma sesión.
 
@@ -84,8 +93,10 @@ Al guardar de nuevo una sesión, los registros existentes se **actualizan**; nun
 | `doGet()` | Code.gs | Devuelve `index.html` con título y meta viewport |
 | `prepararBaseDatos()` | Setup.gs | Crea las 3 hojas y carga P01–P30 y S01–S10 sin duplicar |
 | `obtenerSesiones()` | Asistencia.gs | Lista las sesiones `{id, numero, fecha, tema, estado}` |
-| `obtenerParticipantes(idSesion)` | Asistencia.gs | Participantes activos con su estado `presente` en la sesión |
-| `guardarAsistencia(idSesion, participantes)` | Asistencia.gs | Inserta o actualiza la asistencia y marca la sesión como REGISTRADA |
+| `obtenerParticipantes(idSesion)` | Asistencia.gs | Participantes activos con su `estado` en la sesión (AUSENTE si aún no se registra) |
+| `guardarAsistencia(idSesion, participantes)` | Asistencia.gs | Valida el estado, inserta o actualiza la asistencia y marca la sesión como REGISTRADA |
+
+La interfaz es responsive: en el teléfono las opciones de cada participante se muestran en 2×2 y el botón Guardar queda fijo abajo; en tablet y escritorio los participantes se acomodan en 2 o 3 columnas.
 
 `guardarAsistencia` usa `LockService` para que dos guardados simultáneos no se sobrescriban.
 
@@ -157,9 +168,9 @@ Después de cambiar el código, `clasp push` actualiza `/dev`, pero la URL `/exe
 
 1. Abre la URL de la Web App desde el teléfono o la computadora.
 2. Elige una sesión en el selector.
-3. Marca la casilla de cada participante presente (o usa **Marcar todos** / **Desmarcar todos**).
-4. Revisa el contador `Presentes: N / 30`.
-5. Pulsa **Guardar asistencia**; aparecerá un mensaje con el número de presentes y ausentes.
+3. Para cada participante elige **Asistió**, **Faltó**, **Justificante** o **Suspensión** (o usa los botones **Marcar a todos como**; por ejemplo, **Suspensión de clases** cuando se cancela la sesión).
+4. Revisa el contador `Presentes: N / 30` y el resumen por estado.
+5. Pulsa **Guardar asistencia**; aparecerá un mensaje con el total de cada estado.
 
 ## Uso del agente de IA
 

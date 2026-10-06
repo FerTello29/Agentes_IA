@@ -4,23 +4,42 @@
   <base target="_top">
   <meta charset="UTF-8">
   <style>
+    :root {
+      --fondo: #f3f4f6;
+      --panel: #ffffff;
+      --texto: #111827;
+      --tenue: #6b7280;
+      --borde: #e5e7eb;
+
+      --presente: #15803d;
+      --presente-suave: #dcfce7;
+      --ausente: #b91c1c;
+      --ausente-suave: #fee2e2;
+      --justificado: #b45309;
+      --justificado-suave: #fef3c7;
+      --suspension: #4338ca;
+      --suspension-suave: #e0e7ff;
+    }
+
     * { box-sizing: border-box; }
 
     body {
       margin: 0;
       font-family: Arial, sans-serif;
-      background: #f3f4f6;
-      color: #111827;
+      background: var(--fondo);
+      color: var(--texto);
+      -webkit-text-size-adjust: 100%;
     }
 
     .contenedor {
-      max-width: 760px;
+      width: 100%;
+      max-width: 1100px;
       margin: 0 auto;
       padding: 16px;
     }
 
     .panel {
-      background: white;
+      background: var(--panel);
       border-radius: 14px;
       padding: 18px;
       margin-bottom: 14px;
@@ -29,15 +48,15 @@
 
     h1 {
       margin: 0 0 6px;
-      font-size: 1.45rem;
+      font-size: clamp(1.25rem, 4vw, 1.6rem);
     }
 
     .subtitulo {
       margin: 0;
-      color: #6b7280;
+      color: var(--tenue);
     }
 
-    label {
+    label.titulo {
       display: block;
       margin-bottom: 6px;
       font-weight: 700;
@@ -48,59 +67,103 @@
       min-height: 48px;
       border-radius: 10px;
       font-size: 1rem;
+      font-family: inherit;
     }
 
     select {
       border: 1px solid #d1d5db;
       padding: 10px;
       background: white;
+      color: var(--texto);
     }
 
     button {
       border: 0;
-      padding: 12px 14px;
+      padding: 10px 12px;
       font-weight: 700;
       cursor: pointer;
     }
 
-    .btn-secundario {
-      background: #e5e7eb;
-      color: #111827;
+    button:disabled {
+      opacity: .5;
+      cursor: not-allowed;
     }
 
-    .btn-principal {
-      background: #111827;
-      color: white;
-      margin-top: 12px;
+    .subtitulo-seccion {
+      margin: 16px 0 8px;
+      font-weight: 700;
+      font-size: .95rem;
     }
 
-    .acciones {
+    /* Botones "marcar a todos" y contadores: 4 columnas en pantallas
+       amplias, 2x2 en teléfono. */
+    .grid-estados {
       display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-      margin-top: 12px;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
     }
+
+    .btn-todos {
+      font-size: .9rem;
+      border: 2px solid transparent;
+    }
+
+    .btn-todos[data-estado="PRESENTE"]    { background: var(--presente-suave);    color: var(--presente); }
+    .btn-todos[data-estado="AUSENTE"]     { background: var(--ausente-suave);     color: var(--ausente); }
+    .btn-todos[data-estado="JUSTIFICADO"] { background: var(--justificado-suave); color: var(--justificado); }
+    .btn-todos[data-estado="SUSPENSION"]  { background: var(--suspension-suave);  color: var(--suspension); }
+
+    .contador {
+      border-radius: 10px;
+      padding: 10px;
+      text-align: center;
+      background: #f9fafb;
+      border: 1px solid var(--borde);
+    }
+
+    .contador strong {
+      display: block;
+      font-size: 1.4rem;
+    }
+
+    .contador span {
+      font-size: .8rem;
+      color: var(--tenue);
+    }
+
+    .contador[data-estado="PRESENTE"] strong    { color: var(--presente); }
+    .contador[data-estado="AUSENTE"] strong     { color: var(--ausente); }
+    .contador[data-estado="JUSTIFICADO"] strong { color: var(--justificado); }
+    .contador[data-estado="SUSPENSION"] strong  { color: var(--suspension); }
 
     .resumen {
       display: flex;
       justify-content: space-between;
-      gap: 10px;
-      align-items: center;
+      flex-wrap: wrap;
+      gap: 6px 10px;
       margin-top: 12px;
       font-weight: 700;
     }
 
-    .participante {
-      display: grid;
-      grid-template-columns: 1fr auto;
-      gap: 12px;
-      align-items: center;
-      padding: 14px 0;
-      border-bottom: 1px solid #e5e7eb;
+    .etiqueta-sesion {
+      font-size: .85rem;
+      padding: 2px 10px;
+      border-radius: 999px;
+      background: var(--borde);
     }
 
-    .participante:last-child {
-      border-bottom: 0;
+    .lista {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+
+    .participante {
+      border: 1px solid var(--borde);
+      border-radius: 12px;
+      padding: 12px;
+      min-width: 0;
+      container-type: inline-size;
     }
 
     .nombre {
@@ -108,18 +171,95 @@
     }
 
     .correo {
-      color: #6b7280;
-      font-size: .9rem;
+      color: var(--tenue);
+      font-size: .85rem;
       overflow-wrap: anywhere;
+      margin-bottom: 10px;
     }
 
-    .switch {
-      width: 26px;
-      height: 26px;
+    /* Selector de 4 estados por participante (radios con estilo de botón).
+       2x2 por defecto; una sola fila cuando la tarjeta es suficientemente ancha. */
+    .opciones {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 6px;
+      margin: 0;
+      padding: 0;
+      border: 0;
+      min-width: 0;
+    }
+
+    @container (min-width: 400px) {
+      .opciones { grid-template-columns: repeat(4, 1fr); }
+    }
+
+    .opcion {
+      position: relative;
+      display: block;
+    }
+
+    .opcion input {
+      position: absolute;
+      opacity: 0;
+      inset: 0;
+      margin: 0;
+      cursor: pointer;
+    }
+
+    .opcion span {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 44px;
+      padding: 6px 4px;
+      border: 2px solid var(--borde);
+      border-radius: 10px;
+      font-size: .82rem;
+      font-weight: 700;
+      text-align: center;
+      color: var(--tenue);
+      background: white;
+      user-select: none;
+    }
+
+    .opcion input:focus-visible + span {
+      outline: 3px solid #93c5fd;
+      outline-offset: 1px;
+    }
+
+    .opcion input[value="PRESENTE"]:checked + span    { background: var(--presente);    border-color: var(--presente);    color: white; }
+    .opcion input[value="AUSENTE"]:checked + span     { background: var(--ausente);     border-color: var(--ausente);     color: white; }
+    .opcion input[value="JUSTIFICADO"]:checked + span { background: var(--justificado); border-color: var(--justificado); color: white; }
+    .opcion input[value="SUSPENSION"]:checked + span  { background: var(--suspension);  border-color: var(--suspension);  color: white; }
+
+    .vacio {
+      text-align: center;
+      color: var(--tenue);
+      padding: 20px 0;
+    }
+
+    /* Barra de guardado fija en la parte inferior. */
+    .barra-guardar {
+      position: sticky;
+      bottom: 0;
+      padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+      background: rgba(243, 244, 246, .95);
+      border-top: 1px solid var(--borde);
+      backdrop-filter: blur(6px);
+    }
+
+    .barra-guardar .interior {
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    .btn-principal {
+      background: var(--texto);
+      color: white;
     }
 
     .mensaje {
-      margin-top: 12px;
+      margin-bottom: 10px;
       padding: 10px;
       border-radius: 8px;
       display: none;
@@ -127,13 +267,13 @@
 
     .ok {
       display: block;
-      background: #dcfce7;
+      background: var(--presente-suave);
       color: #166534;
     }
 
     .error {
       display: block;
-      background: #fee2e2;
+      background: var(--ausente-suave);
       color: #991b1b;
     }
 
@@ -144,10 +284,28 @@
       color: #4b5563;
     }
 
+    /* Tablet y escritorio: participantes en 2 o 3 columnas. */
+    @media (min-width: 760px) {
+      .lista { grid-template-columns: repeat(2, 1fr); }
+      .controles {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0 20px;
+      }
+      .controles .bloque-sesion { grid-column: 1 / -1; }
+      .btn-principal { max-width: 360px; margin-left: auto; display: block; }
+    }
+
+    @media (min-width: 1040px) {
+      .lista { grid-template-columns: repeat(3, 1fr); }
+    }
+
+    /* Teléfono */
     @media (max-width: 520px) {
       .contenedor { padding: 10px; }
-      .acciones { grid-template-columns: 1fr; }
-      .panel { padding: 14px; }
+      .panel { padding: 14px; border-radius: 12px; }
+      .grid-estados { grid-template-columns: repeat(2, 1fr); }
+      .barra-guardar { padding-left: 10px; padding-right: 10px; }
     }
   </style>
 </head>
@@ -158,45 +316,85 @@
       <p class="subtitulo">30 participantes · 10 sesiones</p>
     </section>
 
-    <section class="panel">
-      <label for="sesion">Sesión</label>
-      <select id="sesion">
-        <option value="">Selecciona una sesión</option>
-      </select>
+    <section class="panel controles">
+      <div class="bloque-sesion">
+        <label class="titulo" for="sesion">Sesión</label>
+        <select id="sesion">
+          <option value="">Selecciona una sesión</option>
+        </select>
 
-      <div class="acciones">
-        <button class="btn-secundario" onclick="marcarTodos(true)">
-          Marcar todos
-        </button>
-        <button class="btn-secundario" onclick="marcarTodos(false)">
-          Desmarcar todos
-        </button>
+        <div class="resumen">
+          <span id="totalRegistrados">Sin sesión seleccionada</span>
+          <span id="estadoSesion"></span>
+        </div>
       </div>
 
-      <div class="resumen">
-        <span id="contador">Presentes: 0 / 0</span>
-        <span id="estadoSesion"></span>
+      <div>
+        <p class="subtitulo-seccion">Marcar a todos como</p>
+        <div class="grid-estados" id="botonesTodos"></div>
+      </div>
+
+      <div>
+        <p class="subtitulo-seccion">Resumen</p>
+        <div class="grid-estados" id="contadores"></div>
       </div>
     </section>
 
     <section class="panel">
       <div id="cargando" class="cargando">Cargando...</div>
-      <div id="lista"></div>
-
-      <button id="guardar" class="btn-principal" onclick="guardar()" disabled>
-        Guardar asistencia
-      </button>
-
-      <div id="mensaje" class="mensaje"></div>
+      <div id="lista" class="lista">
+        <p class="vacio">Selecciona una sesión para ver a los participantes.</p>
+      </div>
     </section>
   </main>
 
+  <div class="barra-guardar">
+    <div class="interior">
+      <div id="mensaje" class="mensaje" role="status"></div>
+      <button id="guardar" class="btn-principal" onclick="guardar()" disabled>
+        Guardar asistencia
+      </button>
+    </div>
+  </div>
+
   <script>
+    const ESTADOS = [
+      { valor: 'PRESENTE',    etiqueta: 'Asistió',      todos: 'Asistieron' },
+      { valor: 'AUSENTE',     etiqueta: 'Faltó',        todos: 'Faltaron' },
+      { valor: 'JUSTIFICADO', etiqueta: 'Justificante', todos: 'Justificante' },
+      { valor: 'SUSPENSION',  etiqueta: 'Suspensión',   todos: 'Suspensión de clases' }
+    ];
+
     let participantes = [];
     let sesiones = [];
 
-    document.addEventListener('DOMContentLoaded', cargarSesiones);
+    document.addEventListener('DOMContentLoaded', () => {
+      construirControles();
+      cargarSesiones();
+    });
     document.getElementById('sesion').addEventListener('change', cargarParticipantes);
+
+    function construirControles() {
+      const botones = document.getElementById('botonesTodos');
+      const contadores = document.getElementById('contadores');
+
+      ESTADOS.forEach(e => {
+        const boton = document.createElement('button');
+        boton.type = 'button';
+        boton.className = 'btn-todos';
+        boton.dataset.estado = e.valor;
+        boton.textContent = e.todos;
+        boton.disabled = true;
+        boton.addEventListener('click', () => marcarTodos(e.valor));
+        botones.appendChild(boton);
+
+        const contador = document.createElement('div');
+        contador.className = 'contador';
+        contador.dataset.estado = e.valor;
+        contador.innerHTML = `<strong>0</strong><span>${e.etiqueta}</span>`;
+        contadores.appendChild(contador);
+      });
+    }
 
     function cargarSesiones() {
       mostrarCarga(true);
@@ -222,20 +420,20 @@
 
     function cargarParticipantes() {
       const idSesion = document.getElementById('sesion').value;
-      document.getElementById('lista').innerHTML = '';
-      document.getElementById('guardar').disabled = true;
+      participantes = [];
+      ocultarMensaje();
+      habilitarAcciones(false);
 
       if (!idSesion) {
-        participantes = [];
-        actualizarContador();
         document.getElementById('estadoSesion').textContent = '';
+        renderParticipantes();
         return;
       }
 
       const sesion = sesiones.find(s => s.id === idSesion);
-      document.getElementById('estadoSesion').textContent =
-        sesion ? sesion.estado : '';
+      mostrarEstadoSesion(sesion ? sesion.estado : '');
 
+      document.getElementById('lista').innerHTML = '';
       mostrarCarga(true);
 
       google.script.run
@@ -243,7 +441,7 @@
           participantes = datos || [];
           renderParticipantes();
           mostrarCarga(false);
-          document.getElementById('guardar').disabled = false;
+          habilitarAcciones(participantes.length > 0);
         })
         .withFailureHandler(mostrarError)
         .obtenerParticipantes(idSesion);
@@ -253,45 +451,81 @@
       const lista = document.getElementById('lista');
       lista.innerHTML = '';
 
+      if (participantes.length === 0) {
+        const vacio = document.createElement('p');
+        vacio.className = 'vacio';
+        vacio.textContent = document.getElementById('sesion').value
+          ? 'No hay participantes activos.'
+          : 'Selecciona una sesión para ver a los participantes.';
+        lista.appendChild(vacio);
+        actualizarContador();
+        return;
+      }
+
       participantes.forEach((p, indice) => {
-        const fila = document.createElement('div');
-        fila.className = 'participante';
+        const tarjeta = document.createElement('div');
+        tarjeta.className = 'participante';
 
-        const datos = document.createElement('div');
-        datos.innerHTML = `
-          <div class="nombre">${escapar(p.id)} · ${escapar(p.nombre)}</div>
-          <div class="correo">${escapar(p.correo)}</div>
-        `;
+        const nombre = document.createElement('div');
+        nombre.className = 'nombre';
+        nombre.textContent = `${p.id} · ${p.nombre}`;
 
-        const check = document.createElement('input');
-        check.type = 'checkbox';
-        check.className = 'switch';
-        check.checked = Boolean(p.presente);
-        check.addEventListener('change', () => {
-          participantes[indice].presente = check.checked;
-          actualizarContador();
+        const correo = document.createElement('div');
+        correo.className = 'correo';
+        correo.textContent = p.correo;
+
+        const opciones = document.createElement('fieldset');
+        opciones.className = 'opciones';
+        opciones.setAttribute('aria-label', `Asistencia de ${p.nombre}`);
+
+        ESTADOS.forEach(e => {
+          const opcion = document.createElement('label');
+          opcion.className = 'opcion';
+
+          const radio = document.createElement('input');
+          radio.type = 'radio';
+          radio.name = `estado-${indice}`;
+          radio.value = e.valor;
+          radio.checked = p.estado === e.valor;
+          radio.addEventListener('change', () => {
+            participantes[indice].estado = e.valor;
+            actualizarContador();
+          });
+
+          const texto = document.createElement('span');
+          texto.textContent = e.etiqueta;
+
+          opcion.appendChild(radio);
+          opcion.appendChild(texto);
+          opciones.appendChild(opcion);
         });
 
-        fila.appendChild(datos);
-        fila.appendChild(check);
-        lista.appendChild(fila);
+        tarjeta.appendChild(nombre);
+        tarjeta.appendChild(correo);
+        tarjeta.appendChild(opciones);
+        lista.appendChild(tarjeta);
       });
 
       actualizarContador();
     }
 
-    function marcarTodos(valor) {
-      participantes = participantes.map(p => ({
-        ...p,
-        presente: valor
-      }));
+    function marcarTodos(estado) {
+      participantes = participantes.map(p => ({ ...p, estado }));
       renderParticipantes();
     }
 
     function actualizarContador() {
-      const presentes = participantes.filter(p => p.presente).length;
-      document.getElementById('contador').textContent =
-        `Presentes: ${presentes} / ${participantes.length}`;
+      ESTADOS.forEach(e => {
+        const total = participantes.filter(p => p.estado === e.valor).length;
+        document.querySelector(`.contador[data-estado="${e.valor}"] strong`)
+          .textContent = total;
+      });
+
+      const presentes = participantes.filter(p => p.estado === 'PRESENTE').length;
+      document.getElementById('totalRegistrados').textContent =
+        participantes.length
+          ? `Presentes: ${presentes} / ${participantes.length}`
+          : 'Sin sesión seleccionada';
     }
 
     function guardar() {
@@ -302,31 +536,41 @@
         return;
       }
 
-      document.getElementById('guardar').disabled = true;
+      habilitarAcciones(false);
       mostrarCarga(true);
+
+      const datos = participantes.map(p => ({ id: p.id, estado: p.estado }));
 
       google.script.run
         .withSuccessHandler(resultado => {
           mostrarCarga(false);
-          document.getElementById('guardar').disabled = false;
+          habilitarAcciones(true);
 
-          mostrarMensaje(
-            `Guardado: ${resultado.presentes} presentes y ` +
-            `${resultado.ausentes} ausentes.`,
-            true
-          );
+          const detalle = ESTADOS
+            .map(e => `${resultado.conteo[e.valor]} ${e.etiqueta.toLowerCase()}`)
+            .join(', ');
+          mostrarMensaje(`Guardado: ${detalle}.`, true);
 
           const sesion = sesiones.find(s => s.id === idSesion);
-          if (sesion) {
-            sesion.estado = 'REGISTRADA';
-            document.getElementById('estadoSesion').textContent = 'REGISTRADA';
-          }
+          if (sesion) sesion.estado = 'REGISTRADA';
+          mostrarEstadoSesion('REGISTRADA');
         })
         .withFailureHandler(error => {
-          document.getElementById('guardar').disabled = false;
+          habilitarAcciones(true);
           mostrarError(error);
         })
-        .guardarAsistencia(idSesion, participantes);
+        .guardarAsistencia(idSesion, datos);
+    }
+
+    function habilitarAcciones(activo) {
+      document.getElementById('guardar').disabled = !activo;
+      document.querySelectorAll('.btn-todos').forEach(b => b.disabled = !activo);
+    }
+
+    function mostrarEstadoSesion(estado) {
+      const elemento = document.getElementById('estadoSesion');
+      elemento.textContent = estado;
+      elemento.className = estado ? 'etiqueta-sesion' : '';
     }
 
     function mostrarCarga(visible) {
@@ -348,13 +592,10 @@
       mensaje.className = `mensaje ${correcto ? 'ok' : 'error'}`;
     }
 
-    function escapar(texto) {
-      return String(texto ?? '')
-        .replaceAll('&', '&amp;')
-        .replaceAll('<', '&lt;')
-        .replaceAll('>', '&gt;')
-        .replaceAll('"', '&quot;')
-        .replaceAll("'", '&#039;');
+    function ocultarMensaje() {
+      const mensaje = document.getElementById('mensaje');
+      mensaje.textContent = '';
+      mensaje.className = 'mensaje';
     }
   </script>
 </body>

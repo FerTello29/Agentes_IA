@@ -58,7 +58,7 @@ function obtenerParticipantes(idSesion) {
       id: fila[0],
       nombre: fila[1],
       correo: fila[2],
-      presente: estadoPorParticipante.get(fila[0]) === 'PRESENTE'
+      estado: estadoPorParticipante.get(fila[0]) || ESTADO_PREDETERMINADO
     }));
 }
 
@@ -69,6 +69,11 @@ function guardarAsistencia(idSesion, participantes) {
 
   if (!Array.isArray(participantes) || participantes.length === 0) {
     throw new Error('No se recibieron participantes.');
+  }
+
+  const invalido = participantes.find(p => !ESTADOS.includes(p.estado));
+  if (invalido) {
+    throw new Error(`Estado no válido para ${invalido.id}: ${invalido.estado}`);
   }
 
   // Evita que dos guardados simultáneos se sobrescriban entre sí,
@@ -99,7 +104,7 @@ function guardarAsistencia(idSesion, participantes) {
       const registro = [
         idSesion,
         p.id,
-        p.presente ? 'PRESENTE' : 'AUSENTE',
+        p.estado,
         ahora
       ];
 
@@ -126,13 +131,15 @@ function guardarAsistencia(idSesion, participantes) {
     lock.releaseLock();
   }
 
-  const presentes = participantes.filter(p => p.presente).length;
+  const conteo = {};
+  ESTADOS.forEach(estado => {
+    conteo[estado] = participantes.filter(p => p.estado === estado).length;
+  });
 
   return {
     ok: true,
     idSesion,
-    presentes,
-    ausentes: participantes.length - presentes,
+    conteo,
     total: participantes.length
   };
 }
