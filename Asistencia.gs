@@ -1,5 +1,12 @@
 function obtenerSesiones() {
   const ss = obtenerLibro_();
+
+  // Si la base aún no se ha preparado, se inicializa en el primer acceso.
+  const faltaHoja = Object.values(HOJAS).some(nombre => !ss.getSheetByName(nombre));
+  if (faltaHoja) {
+    prepararBaseDatos();
+  }
+
   const hoja = ss.getSheetByName(HOJAS.SESIONES);
 
   if (!hoja || hoja.getLastRow() < 2) {

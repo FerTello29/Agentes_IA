@@ -1,0 +1,867 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Control de asistencia · Fernando Rosales</title>
+  <meta name="description" content="Web App de control de asistencia con Google Apps Script, Google Sheets, clasp y Git. Práctica 2.1 de Inteligencia Artificial aplicada a las TIC.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%237c3aed' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='4' width='18' height='17' rx='3'/%3E%3Cpath d='M8 2v4M16 2v4M3 10h18M8.5 15l2.2 2.2L15.5 13'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #f6f6fb;
+      --surface: #ffffff;
+      --surface-2: #f1f2f8;
+      --text: #0f172a;
+      --muted: #5b6478;
+      --line: #e3e6ef;
+      --brand: #7c3aed;
+      --brand-2: #c026d3;
+      --brand-3: #4338ca;
+      --shadow: 0 1px 2px rgba(15, 23, 42, .04), 0 12px 32px rgba(15, 23, 42, .07);
+
+      --verde: #15803d;
+      --rojo: #b91c1c;
+      --ambar: #b45309;
+      --cian: #0e7490;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0a0e1c;
+        --surface: #121a2e;
+        --surface-2: #1a2440;
+        --text: #e7eaf6;
+        --muted: #9aa5bd;
+        --line: #26324f;
+        --brand: #a78bfa;
+        --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 12px 32px rgba(0, 0, 0, .35);
+        --verde: #4ade80;
+        --rojo: #f87171;
+        --ambar: #fbbf24;
+        --cian: #22d3ee;
+      }
+    }
+
+    * { box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      margin: 0;
+      font-family: 'Plus Jakarta Sans', system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.55;
+    }
+
+    a { color: inherit; }
+
+    :focus-visible { outline: 3px solid #a78bfa; outline-offset: 3px; border-radius: 6px; }
+
+    .envoltura {
+      width: 100%;
+      max-width: 1140px;
+      margin: 0 auto;
+      padding: 0 20px;
+    }
+
+    /* ---------- Navegación ---------- */
+
+    .nav {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background: color-mix(in srgb, var(--bg) 82%, transparent);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid color-mix(in srgb, var(--line) 70%, transparent);
+    }
+
+    .nav .envoltura {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      height: 64px;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 800;
+      text-decoration: none;
+      letter-spacing: -.01em;
+    }
+
+    .logo-icono {
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      display: grid;
+      place-items: center;
+      color: white;
+      background: linear-gradient(135deg, var(--brand-3), #7c3aed 55%, var(--brand-2));
+    }
+
+    .logo-icono svg { width: 19px; height: 19px; }
+
+    .nav-enlaces {
+      display: flex;
+      gap: 4px;
+    }
+
+    .nav-enlaces a {
+      padding: 8px 12px;
+      border-radius: 10px;
+      text-decoration: none;
+      font-size: .9rem;
+      font-weight: 600;
+      color: var(--muted);
+    }
+
+    .nav-enlaces a:hover { color: var(--text); background: var(--surface-2); }
+
+    /* ---------- Hero ---------- */
+
+    .hero {
+      position: relative;
+      overflow: hidden;
+      padding: 64px 0 72px;
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      inset: -40% -10% auto;
+      height: 640px;
+      background:
+        radial-gradient(420px 280px at 20% 40%, rgba(124, 58, 237, .22), transparent 70%),
+        radial-gradient(380px 260px at 80% 30%, rgba(192, 38, 211, .18), transparent 70%),
+        radial-gradient(360px 240px at 60% 80%, rgba(67, 56, 202, .16), transparent 70%);
+      pointer-events: none;
+    }
+
+    .hero .envoltura {
+      position: relative;
+      display: grid;
+      grid-template-columns: minmax(0, 1.15fr) minmax(0, .85fr);
+      gap: 48px;
+      align-items: center;
+    }
+
+    .insignia {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 12px 6px 8px;
+      border-radius: 999px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      box-shadow: var(--shadow);
+      font-size: .8rem;
+      font-weight: 700;
+      color: var(--muted);
+    }
+
+    .insignia b {
+      padding: 2px 8px;
+      border-radius: 999px;
+      color: white;
+      background: linear-gradient(135deg, #7c3aed, var(--brand-2));
+      font-size: .72rem;
+    }
+
+    h1 {
+      margin: 18px 0 16px;
+      font-size: clamp(2.2rem, 6vw, 3.8rem);
+      line-height: 1.04;
+      letter-spacing: -.035em;
+      font-weight: 800;
+    }
+
+    .degradado {
+      background: linear-gradient(120deg, var(--brand-3), #7c3aed 45%, var(--brand-2));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      .degradado { background: linear-gradient(120deg, #a5b4fc, #c4b5fd 45%, #f0abfc); -webkit-background-clip: text; background-clip: text; }
+    }
+
+    .lead {
+      margin: 0 0 28px;
+      font-size: clamp(1rem, 2.2vw, 1.18rem);
+      color: var(--muted);
+      max-width: 560px;
+    }
+
+    .acciones {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .boton {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      height: 52px;
+      padding: 0 22px;
+      border-radius: 14px;
+      font-weight: 700;
+      text-decoration: none;
+      transition: transform .15s ease, box-shadow .15s ease;
+    }
+
+    .boton svg { width: 18px; height: 18px; }
+    .boton:hover { transform: translateY(-2px); }
+
+    .boton-principal {
+      color: white;
+      background: linear-gradient(135deg, var(--brand-3), #7c3aed 55%, var(--brand-2));
+      box-shadow: 0 12px 28px rgba(124, 58, 237, .35);
+    }
+
+    .boton-secundario {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      box-shadow: var(--shadow);
+    }
+
+    /* Teléfono con la demo */
+    .telefono {
+      justify-self: center;
+      position: relative;
+      width: 330px;
+      max-width: 100%;
+      aspect-ratio: 9 / 18.5;
+      padding: 12px;
+      border-radius: 48px;
+      background: #0f172a;
+      box-shadow:
+        0 0 0 2px #334155,
+        0 40px 80px rgba(76, 29, 149, .35),
+        0 12px 24px rgba(15, 23, 42, .25);
+      transform: rotate(2deg);
+      transition: transform .4s ease;
+    }
+
+    .telefono:hover { transform: rotate(0); }
+
+    .telefono::before {
+      content: '';
+      position: absolute;
+      top: 20px;
+      left: 50%;
+      z-index: 2;
+      width: 90px;
+      height: 24px;
+      border-radius: 999px;
+      background: #0f172a;
+      transform: translateX(-50%);
+    }
+
+    .pantalla {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      padding-top: 40px;
+      border-radius: 37px;
+      overflow: hidden;
+      background: #4338ca;
+    }
+
+    .telefono iframe {
+      flex: 1;
+      width: 100%;
+      border: 0;
+      background: white;
+    }
+
+    .telefono-etiqueta {
+      position: absolute;
+      left: -22px;
+      bottom: 64px;
+      z-index: 3;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 14px;
+      border-radius: 14px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      box-shadow: var(--shadow);
+      font-size: .82rem;
+      font-weight: 700;
+      transform: rotate(-2deg);
+    }
+
+    .telefono-etiqueta i {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #22c55e;
+      box-shadow: 0 0 0 4px rgba(34, 197, 94, .2);
+    }
+
+    /* ---------- Secciones ---------- */
+
+    section { padding: 72px 0; }
+
+    .encabezado {
+      max-width: 640px;
+      margin-bottom: 36px;
+    }
+
+    .ceja {
+      margin: 0 0 8px;
+      font-size: .8rem;
+      font-weight: 800;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: var(--brand);
+    }
+
+    h2 {
+      margin: 0 0 12px;
+      font-size: clamp(1.7rem, 4vw, 2.4rem);
+      line-height: 1.12;
+      letter-spacing: -.025em;
+    }
+
+    .encabezado p:last-child { margin: 0; color: var(--muted); }
+
+    /* Ficha del alumno */
+    .ficha {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 28px;
+      align-items: center;
+      padding: 28px;
+      border-radius: 24px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      box-shadow: var(--shadow);
+      margin-top: -36px;
+      position: relative;
+    }
+
+    .ficha-avatar {
+      width: 92px;
+      height: 92px;
+      border-radius: 24px;
+      display: grid;
+      place-items: center;
+      font-size: 2rem;
+      font-weight: 800;
+      color: white;
+      background: linear-gradient(135deg, var(--brand-3), #7c3aed 55%, var(--brand-2));
+      box-shadow: 0 12px 28px rgba(124, 58, 237, .3);
+    }
+
+    .ficha h3 {
+      margin: 0 0 4px;
+      font-size: 1.5rem;
+      letter-spacing: -.02em;
+    }
+
+    .ficha-sub { margin: 0 0 16px; color: var(--muted); }
+
+    .datos {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+      margin: 0;
+    }
+
+    .dato {
+      padding: 12px 14px;
+      border-radius: 14px;
+      background: var(--surface-2);
+    }
+
+    .dato dt {
+      font-size: .72rem;
+      font-weight: 700;
+      letter-spacing: .05em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .dato dd {
+      margin: 2px 0 0;
+      font-weight: 700;
+    }
+
+    /* Características */
+    .rejilla {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .tarjeta {
+      padding: 24px;
+      border-radius: 20px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      box-shadow: var(--shadow);
+      transition: transform .2s ease, border-color .2s ease;
+    }
+
+    .tarjeta:hover {
+      transform: translateY(-4px);
+      border-color: color-mix(in srgb, var(--brand) 40%, var(--line));
+    }
+
+    .tarjeta-icono {
+      width: 46px;
+      height: 46px;
+      border-radius: 14px;
+      display: grid;
+      place-items: center;
+      margin-bottom: 16px;
+      color: var(--c, var(--brand));
+      background: color-mix(in srgb, var(--c, var(--brand)) 14%, transparent);
+    }
+
+    .tarjeta-icono svg { width: 22px; height: 22px; }
+
+    .tarjeta h3 { margin: 0 0 6px; font-size: 1.08rem; }
+    .tarjeta p { margin: 0; color: var(--muted); font-size: .95rem; }
+
+    .estados {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 12px;
+    }
+
+    .estado {
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: .78rem;
+      font-weight: 700;
+      color: var(--c);
+      background: color-mix(in srgb, var(--c) 14%, transparent);
+    }
+
+    /* Arquitectura */
+    .flujo {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 0;
+      align-items: stretch;
+      counter-reset: paso;
+    }
+
+    .nodo {
+      position: relative;
+      padding: 20px 16px;
+      margin: 0 10px;
+      border-radius: 18px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      box-shadow: var(--shadow);
+      text-align: center;
+    }
+
+    .nodo::before {
+      counter-increment: paso;
+      content: counter(paso);
+      position: absolute;
+      top: -12px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      font-size: .75rem;
+      font-weight: 800;
+      color: white;
+      background: linear-gradient(135deg, #7c3aed, var(--brand-2));
+    }
+
+    .nodo:not(:last-child)::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      right: -16px;
+      width: 12px;
+      height: 12px;
+      border-top: 2.5px solid var(--brand);
+      border-right: 2.5px solid var(--brand);
+      transform: translateY(-50%) rotate(45deg);
+    }
+
+    .nodo strong { display: block; margin: 6px 0 4px; }
+    .nodo span { display: block; font-size: .85rem; color: var(--muted); }
+
+    .nodo .tarjeta-icono { margin: 4px auto 6px; }
+
+    .nota {
+      margin-top: 22px;
+      padding: 16px 18px;
+      border-radius: 16px;
+      background: var(--surface-2);
+      color: var(--muted);
+      font-size: .93rem;
+    }
+
+    .nota code {
+      font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
+      font-size: .88em;
+      padding: 1px 6px;
+      border-radius: 6px;
+      background: var(--surface);
+      color: var(--text);
+    }
+
+    /* Tecnologías */
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 16px;
+      border-radius: 999px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      box-shadow: var(--shadow);
+      font-weight: 700;
+      font-size: .92rem;
+    }
+
+    .chip i {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--c);
+    }
+
+    /* Enlaces finales */
+    .enlaces {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .enlace {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      padding: 22px;
+      border-radius: 20px;
+      text-decoration: none;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      box-shadow: var(--shadow);
+      transition: transform .2s ease, border-color .2s ease;
+    }
+
+    .enlace:hover { transform: translateY(-4px); border-color: var(--brand); }
+    .enlace strong { font-size: 1.05rem; }
+    .enlace span { color: var(--muted); font-size: .9rem; }
+    .enlace em {
+      margin-top: 8px;
+      font-style: normal;
+      font-weight: 700;
+      font-size: .9rem;
+      color: var(--brand);
+    }
+
+    footer {
+      padding: 36px 0 48px;
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      font-size: .9rem;
+    }
+
+    footer .envoltura {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    /* ---------- Responsive ---------- */
+
+    @media (max-width: 960px) {
+      .hero .envoltura { grid-template-columns: 1fr; gap: 56px; }
+      .hero-texto { text-align: center; }
+      .lead { margin-left: auto; margin-right: auto; }
+      .acciones { justify-content: center; }
+      .datos { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .rejilla { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .flujo { grid-template-columns: 1fr; gap: 26px; max-width: 420px; margin: 0 auto; }
+      .nodo:not(:last-child)::after {
+        top: auto;
+        right: auto;
+        bottom: -20px;
+        left: 50%;
+        transform: translateX(-50%) rotate(135deg);
+      }
+    }
+
+    @media (max-width: 640px) {
+      .nav-enlaces a:not(.nav-cta) { display: none; }
+      .hero { padding: 40px 0 64px; }
+      section { padding: 56px 0; }
+      .ficha { grid-template-columns: 1fr; text-align: center; padding: 22px; }
+      .ficha-avatar { margin: 0 auto; }
+      .datos { text-align: left; }
+      .rejilla, .enlaces { grid-template-columns: 1fr; }
+      .boton { flex: 1 1 100%; justify-content: center; }
+      .telefono { width: 290px; }
+      .telefono-etiqueta { left: -6px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { transition: none !important; }
+      html { scroll-behavior: auto; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <div class="envoltura">
+      <a class="logo" href="#">
+        <span class="logo-icono">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="3"/><path d="M8 2v4M16 2v4M3 10h18M8.5 15l2.2 2.2L15.5 13"/></svg>
+        </span>
+        Control de asistencia
+      </a>
+      <div class="nav-enlaces">
+        <a href="#caracteristicas">Características</a>
+        <a href="#arquitectura">Arquitectura</a>
+        <a href="#enlaces">Enlaces</a>
+        <a class="nav-cta" href="https://github.com/FerTello29/Agentes_IA" target="_blank" rel="noopener">GitHub</a>
+      </div>
+    </div>
+  </nav>
+
+  <header class="hero">
+    <div class="envoltura">
+      <div class="hero-texto">
+        <span class="insignia"><b>Práctica 2.1</b> Inteligencia Artificial aplicada a las TIC</span>
+        <h1>Pasa lista en <span class="degradado">segundos</span>, desde tu teléfono.</h1>
+        <p class="lead">
+          Web App para registrar la asistencia de 30 participantes en 10 sesiones.
+          Construida con Google Apps Script y Google Sheets, sincronizada con clasp,
+          versionada con Git y desarrollada con apoyo de un agente de IA.
+        </p>
+        <div class="acciones">
+          <a class="boton boton-principal" href="demo.html" target="_blank" rel="noopener">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4l14 8-14 8z"/></svg>
+            Probar la demo
+          </a>
+          <a class="boton boton-secundario" href="https://github.com/FerTello29/Agentes_IA" target="_blank" rel="noopener">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-3.16 19.49c.5.09.68-.22.68-.48v-1.7c-2.78.6-3.37-1.34-3.37-1.34-.45-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.9 1.52 2.34 1.08 2.91.83.09-.65.35-1.09.63-1.34-2.22-.25-4.55-1.11-4.55-4.94 0-1.09.39-1.98 1.03-2.68-.1-.25-.45-1.27.1-2.65 0 0 .84-.27 2.75 1.02a9.56 9.56 0 0 1 5 0c1.91-1.29 2.75-1.02 2.75-1.02.55 1.38.2 2.4.1 2.65.64.7 1.03 1.59 1.03 2.68 0 3.84-2.34 4.68-4.57 4.93.36.31.68.92.68 1.85v2.74c0 .27.18.58.69.48A10 10 0 0 0 12 2z"/></svg>
+            Ver repositorio
+          </a>
+        </div>
+      </div>
+
+      <div class="telefono">
+        <div class="pantalla">
+          <iframe src="demo.html" title="Demo interactiva de la Web App" loading="lazy"></iframe>
+        </div>
+        <div class="telefono-etiqueta"><i></i> Demo interactiva</div>
+      </div>
+    </div>
+  </header>
+
+  <div class="envoltura">
+    <div class="ficha">
+      <div class="ficha-avatar" aria-hidden="true">FR</div>
+      <div>
+        <h3>Fernando Rosales</h3>
+        <p class="ficha-sub">Instituto Tecnológico de Pachuca · TecNM</p>
+        <dl class="datos">
+          <div class="dato"><dt>Carrera</dt><dd>ITICS</dd></div>
+          <div class="dato"><dt>Semestre</dt><dd>8.º semestre</dd></div>
+          <div class="dato"><dt>Materia</dt><dd>Inteligencia Artificial aplicada a las TIC</dd></div>
+          <div class="dato"><dt>Práctica</dt><dd>2.1 Agentes de IA en las TIC</dd></div>
+        </dl>
+      </div>
+    </div>
+  </div>
+
+  <section id="caracteristicas">
+    <div class="envoltura">
+      <div class="encabezado">
+        <p class="ceja">Características</p>
+        <h2>Diseñada para usarse con una mano.</h2>
+        <p>Cada decisión de la interfaz busca que registrar una sesión completa tome el menor número de toques posible.</p>
+      </div>
+
+      <div class="rejilla">
+        <article class="tarjeta">
+          <div class="tarjeta-icono" style="--c: var(--verde)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg>
+          </div>
+          <h3>Cuatro estados de asistencia</h3>
+          <p>Cada participante puede marcarse con un toque.</p>
+          <div class="estados">
+            <span class="estado" style="--c: var(--verde)">Asistió</span>
+            <span class="estado" style="--c: var(--rojo)">Faltó</span>
+            <span class="estado" style="--c: var(--ambar)">Justificante</span>
+            <span class="estado" style="--c: var(--cian)">Suspensión</span>
+          </div>
+        </article>
+
+        <article class="tarjeta">
+          <div class="tarjeta-icono">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="3"/><path d="M8 2v4M16 2v4M3 10h18"/></svg>
+          </div>
+          <h3>10 sesiones a un toque</h3>
+          <p>Selector deslizable con fecha y estado de cada sesión. Abre automáticamente la sesión de hoy.</p>
+        </article>
+
+        <article class="tarjeta">
+          <div class="tarjeta-icono" style="--c: #db2777">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l2.5 5.5L20 9l-4 4 1 6-5-3-5 3 1-6-4-4 5.5-.5z"/></svg>
+          </div>
+          <h3>Marcar a todos</h3>
+          <p>Un botón por estado. Ideal para registrar una suspensión de clases completa en un solo paso.</p>
+        </article>
+
+        <article class="tarjeta">
+          <div class="tarjeta-icono" style="--c: var(--ambar)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+          </div>
+          <h3>Búsqueda instantánea</h3>
+          <p>Encuentra a cualquier participante por nombre, ID o correo mientras escribes.</p>
+        </article>
+
+        <article class="tarjeta">
+          <div class="tarjeta-icono" style="--c: var(--cian)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20V10M18 20V4M6 20v-4"/></svg>
+          </div>
+          <h3>Resumen en vivo</h3>
+          <p>Contadores por estado, barra de distribución y anillo con el porcentaje de asistencia.</p>
+        </article>
+
+        <article class="tarjeta">
+          <div class="tarjeta-icono" style="--c: var(--rojo)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 4v5c0 5-3.5 8-8 9-4.5-1-8-4-8-9V7z"/><path d="M9 12l2 2 4-4"/></svg>
+          </div>
+          <h3>Sin duplicados ni pérdidas</h3>
+          <p>Clave compuesta sesión + participante, bloqueo con LockService y aviso de cambios sin guardar.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section id="arquitectura" style="background: var(--surface-2)">
+    <div class="envoltura">
+      <div class="encabezado">
+        <p class="ceja">Arquitectura</p>
+        <h2>Del editor al teléfono.</h2>
+        <p>Sin servidores externos ni bases de datos adicionales: todo corre sobre Google Apps Script y Google Sheets.</p>
+      </div>
+
+      <div class="flujo">
+        <div class="nodo">
+          <div class="tarjeta-icono"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v3M12 18v3M3 12h3M18 12h3M6 6l2 2M16 16l2 2M6 18l2-2M16 8l2-2"/><circle cx="12" cy="12" r="3"/></svg></div>
+          <strong>Agente de IA</strong>
+          <span>Propone y revisa el código</span>
+        </div>
+        <div class="nodo">
+          <div class="tarjeta-icono" style="--c: #2563eb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 7l-5 5 5 5M16 7l5 5-5 5"/></svg></div>
+          <strong>VS Code</strong>
+          <span>Git → GitHub · clasp → Apps Script</span>
+        </div>
+        <div class="nodo">
+          <div class="tarjeta-icono" style="--c: var(--ambar)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg></div>
+          <strong>Apps Script</strong>
+          <span>Backend y publicación web</span>
+        </div>
+        <div class="nodo">
+          <div class="tarjeta-icono" style="--c: var(--verde)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M4 9h16M4 15h16M10 3v18"/></svg></div>
+          <strong>Google Sheets</strong>
+          <span>Participantes · Sesiones · Asistencias</span>
+        </div>
+        <div class="nodo">
+          <div class="tarjeta-icono" style="--c: #db2777"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2" width="10" height="20" rx="2.5"/><path d="M11 18h2"/></svg></div>
+          <strong>Web App</strong>
+          <span>Interfaz móvil vía google.script.run</span>
+        </div>
+      </div>
+
+      <p class="nota">
+        <code>clasp push / pull</code> sincroniza el código con Apps Script;
+        <code>git push / pull</code> sincroniza el historial con GitHub.
+        Node.js solo se usa para ejecutar clasp; no hospeda la aplicación.
+      </p>
+    </div>
+  </section>
+
+  <section id="tecnologias">
+    <div class="envoltura">
+      <div class="encabezado">
+        <p class="ceja">Tecnologías</p>
+        <h2>Herramientas utilizadas.</h2>
+      </div>
+      <div class="chips">
+        <span class="chip"><i style="--c:#f59e0b"></i>Google Apps Script</span>
+        <span class="chip"><i style="--c:#16a34a"></i>Google Sheets</span>
+        <span class="chip"><i style="--c:#e34f26"></i>HTML</span>
+        <span class="chip"><i style="--c:#2563eb"></i>CSS</span>
+        <span class="chip"><i style="--c:#eab308"></i>JavaScript</span>
+        <span class="chip"><i style="--c:#22c55e"></i>Node.js</span>
+        <span class="chip"><i style="--c:#4285f4"></i>clasp</span>
+        <span class="chip"><i style="--c:#f05032"></i>Git</span>
+        <span class="chip"><i style="--c:#64748b"></i>GitHub</span>
+        <span class="chip"><i style="--c:#0ea5e9"></i>Visual Studio Code</span>
+        <span class="chip"><i style="--c:#7c3aed"></i>Agente de IA</span>
+      </div>
+    </div>
+  </section>
+
+  <section id="enlaces" style="padding-top: 0">
+    <div class="envoltura">
+      <div class="encabezado">
+        <p class="ceja">Enlaces</p>
+        <h2>Explora el proyecto.</h2>
+      </div>
+      <div class="enlaces">
+        <a class="enlace" href="demo.html" target="_blank" rel="noopener">
+          <strong>Demo interactiva</strong>
+          <span>La misma interfaz con datos de ejemplo guardados en tu navegador.</span>
+          <em>Abrir demo →</em>
+        </a>
+        <a class="enlace" href="https://script.google.com/a/macros/pachuca.tecnm.mx/s/AKfycbwdjFBxO8HbOjvZw4nwINGt7QG8xXkoJSs2Psue3R40qbUFSPxmVjYFG9r-QXfyo10/exec" target="_blank" rel="noopener">
+          <strong>Web App en producción</strong>
+          <span>Conectada a Google Sheets. Requiere cuenta institucional.</span>
+          <em>Abrir Web App →</em>
+        </a>
+        <a class="enlace" href="https://github.com/FerTello29/Agentes_IA" target="_blank" rel="noopener">
+          <strong>Repositorio en GitHub</strong>
+          <span>Código fuente, historial de commits y documentación.</span>
+          <em>Ver código →</em>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="envoltura">
+      <span>Fernando Rosales · ITICS · 8.º semestre</span>
+      <span>Inteligencia Artificial aplicada a las TIC · Práctica 2.1</span>
+    </div>
+  </footer>
+</body>
+</html>
